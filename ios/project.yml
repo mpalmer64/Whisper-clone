@@ -1,0 +1,101 @@
+# XcodeGen spec — run `xcodegen` in this directory to produce
+# WhisperKeyMobile.xcodeproj (keyboard extensions require a real Xcode
+# project; they can't be built from a plain Swift package).
+#
+# Before building:
+#   1. Set DEVELOPMENT_TEAM below (Xcode → Settings → Accounts shows your ID),
+#      or pick your team in Xcode's Signing & Capabilities pane instead.
+#   2. If signing complains that the bundle id / app group is taken, change
+#      "com.whisperkey.ios" and "group.com.whisperkey.shared" to your own —
+#      the app group id must also be updated in Shared/SharedTranscript.swift.
+
+name: WhisperKeyMobile
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "15.0"
+
+packages:
+  WhisperKit:
+    url: https://github.com/argmaxinc/WhisperKit
+    from: 0.9.0
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: ""
+    SWIFT_VERSION: "5.9"
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  WhisperKeyMobile:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Shared
+      # Reused from the macOS app — pure-Foundation / cross-platform files.
+      - path: ../Sources/WhisperKey/Transcriber.swift
+      - path: ../Sources/WhisperKey/TranscriptCleaner.swift
+      - path: ../Sources/WhisperKey/AudioRecorder.swift
+      - path: ../Sources/WhisperKey/Settings.swift
+    dependencies:
+      - package: WhisperKit
+      - target: WhisperKeyboard
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.whisperkey.ios
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    entitlements:
+      path: App/WhisperKeyMobile.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.whisperkey.shared
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: WhisperKey
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        NSMicrophoneUsageDescription: >-
+          WhisperKey listens while you dictate so it can type what you say.
+          Audio never leaves your iPhone.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.whisperkey.ios
+            CFBundleURLSchemes:
+              - whisperkey
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
+
+  WhisperKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Keyboard
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.whisperkey.ios.keyboard
+    entitlements:
+      path: Keyboard/WhisperKeyboard.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.whisperkey.shared
+    info:
+      path: Keyboard/Info.plist
+      properties:
+        CFBundleDisplayName: WhisperKey
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
+          NSExtensionAttributes:
+            IsASCIICapable: true
+            PrefersRightToLeft: false
+            PrimaryLanguage: en-US
+            # Full Access is required so the keyboard can read the transcript
+            # from the shared App Group container. The keyboard itself never
+            # touches the network or the microphone (iOS forbids both).
+            RequestsOpenAccess: true

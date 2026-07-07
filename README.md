@@ -81,6 +81,14 @@ Menu bar icon → **Model**:
 
 Tip: after things are working, try **Small** — it's the sweet spot on any M-series chip.
 
+## iPhone version
+
+There's a companion iOS app + custom keyboard in [`ios/`](ios/README.md).
+iOS doesn't allow a global fn key or microphone access from keyboards, so it
+uses the same flow as Wispr Flow's iPhone app: tap 🎤 on the WhisperKey
+keyboard → the app opens and listens → swipe back → your words are typed in.
+See [ios/README.md](ios/README.md) for build and setup instructions.
+
 ## Troubleshooting
 
 - **Nothing happens when I hold fn** → Accessibility permission is missing
